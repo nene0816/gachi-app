@@ -63,6 +63,114 @@ function ScoreBar({ label, value, max = 5, color }) {
   );
 }
 
+function PostMealModal({ store, onClose }) {
+  const [menuName, setMenuName] = useState("");
+  const [menuType, setMenuType] = useState(null);
+  const [photo, setPhoto] = useState(null);
+  const [photoPreview, setPhotoPreview] = useState(null);
+  const [submitted, setSubmitted] = useState(false);
+
+  useEffect(() => {
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = ""; };
+  }, []);
+
+  const handlePhoto = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setPhoto(file);
+      setPhotoPreview(URL.createObjectURL(file));
+    }
+  };
+
+  const handleSubmit = () => {
+    // TODO: Supabaseに保存する
+    console.log("Submitted:", { store: store.店名, menuName, menuType, photo });
+    setSubmitted(true);
+  };
+
+  return (
+    <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.9)", zIndex: 2000, display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
+      <div onClick={e => e.stopPropagation()} style={{ background: "#0d0d0d", borderRadius: "20px 20px 0 0", width: "100%", maxWidth: 600, maxHeight: "90vh", overflowY: "auto", padding: "28px 24px 40px", border: "1px solid #222", borderBottom: "none" }}>
+        <div style={{ width: 36, height: 4, background: "#333", borderRadius: 2, margin: "0 auto 24px" }} />
+
+        {submitted ? (
+          <div style={{ textAlign: "center", padding: "40px 0" }}>
+            <div style={{ fontSize: 48, marginBottom: 16 }}>🎉</div>
+            <div style={{ fontSize: 20, fontWeight: 800, color: "#00C896", marginBottom: 8 }}>Thanks!</div>
+            <div style={{ fontSize: 14, color: "#666", marginBottom: 24 }}>Your recommendation helps other travelers find great spots.</div>
+            <button onClick={onClose} style={{ background: "#00C896", color: "#000", fontWeight: 700, fontSize: 14, padding: "14px 32px", borderRadius: 10, border: "none", cursor: "pointer" }}>Done</button>
+          </div>
+        ) : (
+          <>
+            <div style={{ marginBottom: 24 }}>
+              <div style={{ fontSize: 11, color: "#00C896", letterSpacing: 1, textTransform: "uppercase", marginBottom: 6 }}>I ate here!</div>
+              <div style={{ fontSize: 18, fontWeight: 800, color: "#fff" }}>{store.店名}</div>
+            </div>
+
+            {/* Menu name */}
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ fontSize: 12, color: "#666", marginBottom: 8, letterSpacing: 0.5 }}>What was the best dish you had?</div>
+              <input
+                value={menuName}
+                onChange={e => setMenuName(e.target.value)}
+                placeholder="e.g. Tsukemen, Toro sushi..."
+                style={{ width: "100%", padding: "12px 16px", borderRadius: 10, fontSize: 14, background: "#111", border: "1px solid #222", color: "#fff", outline: "none", boxSizing: "border-box" }}
+              />
+            </div>
+
+            {/* Menu type */}
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ fontSize: 12, color: "#666", marginBottom: 8, letterSpacing: 0.5 }}>Is this dish available year-round?</div>
+              <div style={{ display: "flex", gap: 10 }}>
+                {[["regular", "✓ Regular menu"], ["limited", "⏱ Limited / Seasonal"]].map(([val, label]) => (
+                  <button key={val} onClick={() => setMenuType(val)} style={{
+                    flex: 1, padding: "10px", borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: "pointer",
+                    background: menuType === val ? "#00C896" : "#111",
+                    color: menuType === val ? "#000" : "#555",
+                    border: menuType === val ? "1px solid #00C896" : "1px solid #222",
+                  }}>{label}</button>
+                ))}
+              </div>
+            </div>
+
+            {/* Photo upload */}
+            <div style={{ marginBottom: 24 }}>
+              <div style={{ fontSize: 12, color: "#666", marginBottom: 8, letterSpacing: 0.5 }}>Add a photo (optional)</div>
+              {photoPreview ? (
+                <div style={{ position: "relative" }}>
+                  <img src={photoPreview} alt="preview" style={{ width: "100%", height: 200, objectFit: "cover", borderRadius: 10, border: "1px solid #222" }} />
+                  <button onClick={() => { setPhoto(null); setPhotoPreview(null); }} style={{ position: "absolute", top: 8, right: 8, background: "rgba(0,0,0,0.7)", color: "#fff", border: "none", borderRadius: 20, padding: "4px 10px", fontSize: 12, cursor: "pointer" }}>Remove</button>
+                </div>
+              ) : (
+                <label style={{ display: "block", border: "1px dashed #333", borderRadius: 10, padding: "32px", textAlign: "center", cursor: "pointer" }}>
+                  <div style={{ fontSize: 28, marginBottom: 8 }}>📷</div>
+                  <div style={{ fontSize: 13, color: "#555" }}>Tap to upload a photo</div>
+                  <input type="file" accept="image/*" onChange={handlePhoto} style={{ display: "none" }} />
+                </label>
+              )}
+            </div>
+
+            <button
+              onClick={handleSubmit}
+              disabled={!menuName}
+              style={{
+                width: "100%", padding: "14px", borderRadius: 10, fontSize: 14, fontWeight: 700, cursor: menuName ? "pointer" : "not-allowed",
+                background: menuName ? "#00C896" : "#1a1a1a",
+                color: menuName ? "#000" : "#444",
+                border: "none", letterSpacing: 0.5,
+              }}
+            >
+              Share my experience →
+            </button>
+            <div style={{ fontSize: 11, color: "#333", textAlign: "center", marginTop: 10 }}>Helps other travelers find great dishes</div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function StoreCard({ store, onClick, userLocation, rank }) {
   const gachi = getGachiLabel(store.ガチ指数);
   const contam = getContamLabel(store.汚染判定);
@@ -133,6 +241,7 @@ function NearbySection({ stores, userLocation, onSelect, genre, setGenre }) {
 }
 
 function DetailModal({ store, onClose, userLocation }) {
+  const [showPostMeal, setShowPostMeal] = useState(false);
   const gachi = getGachiLabel(store.ガチ指数);
   const contam = getContamLabel(store.汚染判定);
   const dist = userLocation && store.lat && store.lng ? getDistance(userLocation.lat, userLocation.lng, store.lat, store.lng) : null;
@@ -150,55 +259,61 @@ function DetailModal({ store, onClose, userLocation }) {
     : null;
 
   return (
-    <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", zIndex: 1000, display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
-      <div onClick={e => e.stopPropagation()} style={{ background: "#0d0d0d", borderRadius: "20px 20px 0 0", width: "100%", maxWidth: 600, maxHeight: "90vh", overflowY: "auto", padding: "28px 24px 40px", border: "1px solid #222", borderBottom: "none" }}>
-        <div style={{ width: 36, height: 4, background: "#333", borderRadius: 2, margin: "0 auto 24px" }} />
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 }}>
-          <div style={{ flex: 1 }}>
-            <h2 style={{ fontSize: 20, fontWeight: 800, color: "#fff", margin: "0 0 8px" }}>{store.店名}</h2>
-            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-              <span style={{ fontSize: 12, background: "#1a1a1a", color: "#888", padding: "3px 10px", borderRadius: 6 }}>{store.エリア}</span>
-              <span style={{ fontSize: 12, background: "#1a1a1a", color: "#888", padding: "3px 10px", borderRadius: 6 }}>{store.ジャンル}</span>
-              <span style={{ fontSize: 12, color: contam.color, padding: "3px 10px", borderRadius: 6, border: `1px solid ${contam.color}44` }}>{contam.label}</span>
-              {dist !== null && <span style={{ fontSize: 12, color: "#555", padding: "3px 10px", borderRadius: 6, background: "#1a1a1a" }}>📍 {formatDist(dist)}</span>}
+    <>
+      <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", zIndex: 1000, display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
+        <div onClick={e => e.stopPropagation()} style={{ background: "#0d0d0d", borderRadius: "20px 20px 0 0", width: "100%", maxWidth: 600, maxHeight: "90vh", overflowY: "auto", padding: "28px 24px 40px", border: "1px solid #222", borderBottom: "none" }}>
+          <div style={{ width: 36, height: 4, background: "#333", borderRadius: 2, margin: "0 auto 24px" }} />
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 }}>
+            <div style={{ flex: 1 }}>
+              <h2 style={{ fontSize: 20, fontWeight: 800, color: "#fff", margin: "0 0 8px" }}>{store.店名}</h2>
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                <span style={{ fontSize: 12, background: "#1a1a1a", color: "#888", padding: "3px 10px", borderRadius: 6 }}>{store.エリア}</span>
+                <span style={{ fontSize: 12, background: "#1a1a1a", color: "#888", padding: "3px 10px", borderRadius: 6 }}>{store.ジャンル}</span>
+                <span style={{ fontSize: 12, color: contam.color, padding: "3px 10px", borderRadius: 6, border: `1px solid ${contam.color}44` }}>{contam.label}</span>
+                {dist !== null && <span style={{ fontSize: 12, color: "#555", padding: "3px 10px", borderRadius: 6, background: "#1a1a1a" }}>📍 {formatDist(dist)}</span>}
+              </div>
+            </div>
+            <div style={{ textAlign: "center", minWidth: 72 }}>
+              <div style={{ fontSize: 32, fontWeight: 900, color: gachi.color }}>{store.ガチ指数?.toFixed(1) ?? "−"}</div>
+              <div style={{ fontSize: 11, color: gachi.color, letterSpacing: 0.5 }}>{gachi.label}</div>
             </div>
           </div>
-          <div style={{ textAlign: "center", minWidth: 72 }}>
-            <div style={{ fontSize: 32, fontWeight: 900, color: gachi.color }}>{store.ガチ指数?.toFixed(1) ?? "−"}</div>
-            <div style={{ fontSize: 11, color: gachi.color, letterSpacing: 0.5 }}>{gachi.label}</div>
-          </div>
-        </div>
 
-        <div style={{ background: "#111", borderRadius: 12, padding: "16px 18px", marginBottom: 16 }}>
-          <div style={{ fontSize: 11, color: "#555", letterSpacing: 1, textTransform: "uppercase", marginBottom: 14 }}>Score Breakdown</div>
-          <ScoreBar label="Tabelog (Local Trust)" value={store.食べログスコア} color="#00C896" />
-          {tabelogNote && <div style={{ fontSize: 11, color: "#00C896", marginTop: -6, marginBottom: 10, paddingLeft: 2 }}>= {tabelogNote} (Japanese reviewers are strict)</div>}
-          <ScoreBar label="Google Rating" value={store.Google評価} color="#4A9EFF" />
-          <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8, paddingTop: 8, borderTop: "1px solid #1a1a1a" }}>
-            <span style={{ fontSize: 11, color: "#555" }}>Tabelog reviews</span>
-            <span style={{ fontSize: 12, color: "#666" }}>{store.食べログ口コミ数?.toLocaleString() ?? "−"}</span>
-          </div>
-          <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4 }}>
-            <span style={{ fontSize: 11, color: "#555" }}>Google reviews</span>
-            <span style={{ fontSize: 12, color: "#666" }}>{store.Google件数?.toLocaleString() ?? "−"}</span>
-          </div>
-        </div>
-
-        {store.reviewSummary && (
           <div style={{ background: "#111", borderRadius: 12, padding: "16px 18px", marginBottom: 16 }}>
-            <div style={{ fontSize: 11, color: "#555", letterSpacing: 1, textTransform: "uppercase", marginBottom: 10 }}>Why trusted by locals</div>
-            <p style={{ fontSize: 13, color: "#bbb", lineHeight: 1.7, margin: 0 }}>{store.reviewSummary}</p>
+            <div style={{ fontSize: 11, color: "#555", letterSpacing: 1, textTransform: "uppercase", marginBottom: 14 }}>Score Breakdown</div>
+            <ScoreBar label="Tabelog (Local Trust)" value={store.食べログスコア} color="#00C896" />
+            {tabelogNote && <div style={{ fontSize: 11, color: "#00C896", marginTop: -6, marginBottom: 10, paddingLeft: 2 }}>= {tabelogNote} (Japanese reviewers are strict)</div>}
+            <ScoreBar label="Google Rating" value={store.Google評価} color="#4A9EFF" />
+            <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8, paddingTop: 8, borderTop: "1px solid #1a1a1a" }}>
+              <span style={{ fontSize: 11, color: "#555" }}>Tabelog reviews</span>
+              <span style={{ fontSize: 12, color: "#666" }}>{store.食べログ口コミ数?.toLocaleString() ?? "−"}</span>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4 }}>
+              <span style={{ fontSize: 11, color: "#555" }}>Google reviews</span>
+              <span style={{ fontSize: 12, color: "#666" }}>{store.Google件数?.toLocaleString() ?? "−"}</span>
+            </div>
           </div>
-        )}
 
-        <div style={{ display: "flex", gap: 10, marginTop: 20 }}>
-          <a href={store.食べログURL} target="_blank" rel="noopener noreferrer" style={{ flex: 1, display: "block", textAlign: "center", background: "#00C896", color: "#000", fontWeight: 700, fontSize: 14, padding: "14px", borderRadius: 10, textDecoration: "none", letterSpacing: 0.5 }}>
-            View on Tabelog →
-          </a>
-          <button onClick={onClose} style={{ background: "#1a1a1a", border: "1px solid #333", color: "#888", fontSize: 14, padding: "14px 20px", borderRadius: 10, cursor: "pointer" }}>Close</button>
+          {store.reviewSummary && (
+            <div style={{ background: "#111", borderRadius: 12, padding: "16px 18px", marginBottom: 16 }}>
+              <div style={{ fontSize: 11, color: "#555", letterSpacing: 1, textTransform: "uppercase", marginBottom: 10 }}>Why trusted by locals</div>
+              <p style={{ fontSize: 13, color: "#bbb", lineHeight: 1.7, margin: 0 }}>{store.reviewSummary}</p>
+            </div>
+          )}
+
+          <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 20 }}>
+            <a href={store.食べログURL} target="_blank" rel="noopener noreferrer" style={{ display: "block", textAlign: "center", background: "#00C896", color: "#000", fontWeight: 700, fontSize: 14, padding: "14px", borderRadius: 10, textDecoration: "none", letterSpacing: 0.5 }}>
+              View on Tabelog →
+            </a>
+            <button onClick={() => setShowPostMeal(true)} style={{ background: "#111", border: "1px solid #333", color: "#aaa", fontSize: 14, fontWeight: 600, padding: "14px", borderRadius: 10, cursor: "pointer", letterSpacing: 0.5 }}>
+              🍜 I ate here — share my dish
+            </button>
+            <button onClick={onClose} style={{ background: "transparent", border: "none", color: "#444", fontSize: 13, padding: "8px", cursor: "pointer" }}>Close</button>
+          </div>
         </div>
       </div>
-    </div>
+      {showPostMeal && <PostMealModal store={store} onClose={() => setShowPostMeal(false)} />}
+    </>
   );
 }
 
