@@ -37,10 +37,21 @@ function getGachiLabel(score) {
 }
 
 function getContamLabel(flag) {
-  if (flag === "操作疑い") return { label: "🚨 Suspicious", color: "#FF5C5C" };
-  if (flag === "注意") return { label: "⚠ Caution", color: "#F5A623" };
-  if (flag === "正常") return { label: "✓ Clean", color: "#00C896" };
+  if (flag === "操作疑い") return { label: "🚩 Unusual review pattern", color: "#FF5C5C" };
+  if (flag === "注意") return { label: "⚠ Tourist bias", color: "#F5A623" };
+  if (flag === "正常") return { label: "✓ Locals-trusted", color: "#00C896" };
   return { label: "−", color: "#888" };
+}
+
+function getPriceLabel(level) {
+  const map = {
+    "PRICE_LEVEL_FREE": "Free",
+    "PRICE_LEVEL_INEXPENSIVE": "¥",
+    "PRICE_LEVEL_MODERATE": "¥¥",
+    "PRICE_LEVEL_EXPENSIVE": "¥¥¥",
+    "PRICE_LEVEL_VERY_EXPENSIVE": "¥¥¥¥",
+  };
+  return map[level] || null;
 }
 
 function formatDist(m) {
@@ -77,14 +88,10 @@ function PostMealModal({ store, onClose }) {
 
   const handlePhoto = (e) => {
     const file = e.target.files[0];
-    if (file) {
-      setPhoto(file);
-      setPhotoPreview(URL.createObjectURL(file));
-    }
+    if (file) { setPhoto(file); setPhotoPreview(URL.createObjectURL(file)); }
   };
 
   const handleSubmit = () => {
-    // TODO: Supabaseに保存する
     console.log("Submitted:", { store: store.店名, menuName, menuType, photo });
     setSubmitted(true);
   };
@@ -93,7 +100,6 @@ function PostMealModal({ store, onClose }) {
     <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.9)", zIndex: 2000, display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
       <div onClick={e => e.stopPropagation()} style={{ background: "#0d0d0d", borderRadius: "20px 20px 0 0", width: "100%", maxWidth: 600, maxHeight: "90vh", overflowY: "auto", padding: "28px 24px 40px", border: "1px solid #222", borderBottom: "none" }}>
         <div style={{ width: 36, height: 4, background: "#333", borderRadius: 2, margin: "0 auto 24px" }} />
-
         {submitted ? (
           <div style={{ textAlign: "center", padding: "40px 0" }}>
             <div style={{ fontSize: 48, marginBottom: 16 }}>🎉</div>
@@ -107,36 +113,20 @@ function PostMealModal({ store, onClose }) {
               <div style={{ fontSize: 11, color: "#00C896", letterSpacing: 1, textTransform: "uppercase", marginBottom: 6 }}>I ate here!</div>
               <div style={{ fontSize: 18, fontWeight: 800, color: "#fff" }}>{store.店名}</div>
             </div>
-
-            {/* Menu name */}
             <div style={{ marginBottom: 20 }}>
-              <div style={{ fontSize: 12, color: "#666", marginBottom: 8, letterSpacing: 0.5 }}>What was the best dish you had?</div>
-              <input
-                value={menuName}
-                onChange={e => setMenuName(e.target.value)}
-                placeholder="e.g. Tsukemen, Toro sushi..."
-                style={{ width: "100%", padding: "12px 16px", borderRadius: 10, fontSize: 14, background: "#111", border: "1px solid #222", color: "#fff", outline: "none", boxSizing: "border-box" }}
-              />
+              <div style={{ fontSize: 12, color: "#666", marginBottom: 8 }}>What was the best dish you had?</div>
+              <input value={menuName} onChange={e => setMenuName(e.target.value)} placeholder="e.g. Tsukemen, Toro sushi..." style={{ width: "100%", padding: "12px 16px", borderRadius: 10, fontSize: 14, background: "#111", border: "1px solid #222", color: "#fff", outline: "none", boxSizing: "border-box" }} />
             </div>
-
-            {/* Menu type */}
             <div style={{ marginBottom: 20 }}>
-              <div style={{ fontSize: 12, color: "#666", marginBottom: 8, letterSpacing: 0.5 }}>Is this dish available year-round?</div>
+              <div style={{ fontSize: 12, color: "#666", marginBottom: 8 }}>Is this dish available year-round?</div>
               <div style={{ display: "flex", gap: 10 }}>
                 {[["regular", "✓ Regular menu"], ["limited", "⏱ Limited / Seasonal"]].map(([val, label]) => (
-                  <button key={val} onClick={() => setMenuType(val)} style={{
-                    flex: 1, padding: "10px", borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: "pointer",
-                    background: menuType === val ? "#00C896" : "#111",
-                    color: menuType === val ? "#000" : "#555",
-                    border: menuType === val ? "1px solid #00C896" : "1px solid #222",
-                  }}>{label}</button>
+                  <button key={val} onClick={() => setMenuType(val)} style={{ flex: 1, padding: "10px", borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: "pointer", background: menuType === val ? "#00C896" : "#111", color: menuType === val ? "#000" : "#555", border: menuType === val ? "1px solid #00C896" : "1px solid #222" }}>{label}</button>
                 ))}
               </div>
             </div>
-
-            {/* Photo upload */}
             <div style={{ marginBottom: 24 }}>
-              <div style={{ fontSize: 12, color: "#666", marginBottom: 8, letterSpacing: 0.5 }}>Add a photo (optional)</div>
+              <div style={{ fontSize: 12, color: "#666", marginBottom: 8 }}>Add a photo (optional)</div>
               {photoPreview ? (
                 <div style={{ position: "relative" }}>
                   <img src={photoPreview} alt="preview" style={{ width: "100%", height: 200, objectFit: "cover", borderRadius: 10, border: "1px solid #222" }} />
@@ -150,17 +140,7 @@ function PostMealModal({ store, onClose }) {
                 </label>
               )}
             </div>
-
-            <button
-              onClick={handleSubmit}
-              disabled={!menuName}
-              style={{
-                width: "100%", padding: "14px", borderRadius: 10, fontSize: 14, fontWeight: 700, cursor: menuName ? "pointer" : "not-allowed",
-                background: menuName ? "#00C896" : "#1a1a1a",
-                color: menuName ? "#000" : "#444",
-                border: "none", letterSpacing: 0.5,
-              }}
-            >
+            <button onClick={handleSubmit} disabled={!menuName} style={{ width: "100%", padding: "14px", borderRadius: 10, fontSize: 14, fontWeight: 700, cursor: menuName ? "pointer" : "not-allowed", background: menuName ? "#00C896" : "#1a1a1a", color: menuName ? "#000" : "#444", border: "none" }}>
               Share my experience →
             </button>
             <div style={{ fontSize: 11, color: "#333", textAlign: "center", marginTop: 10 }}>Helps other travelers find great dishes</div>
@@ -175,6 +155,7 @@ function StoreCard({ store, onClick, userLocation, rank }) {
   const gachi = getGachiLabel(store.ガチ指数);
   const contam = getContamLabel(store.汚染判定);
   const dist = userLocation && store.lat && store.lng ? getDistance(userLocation.lat, userLocation.lng, store.lat, store.lng) : null;
+  const price = getPriceLabel(store.priceLevel);
   return (
     <div onClick={() => onClick(store)} style={{ background: "#111", border: "1px solid #222", borderRadius: 12, padding: "18px 20px", cursor: "pointer", transition: "all 0.2s", position: "relative" }}
       onMouseEnter={e => e.currentTarget.style.borderColor = "#00C896"}
@@ -186,6 +167,7 @@ function StoreCard({ store, onClick, userLocation, rank }) {
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
             <span style={{ fontSize: 11, background: "#1a1a1a", color: "#888", padding: "2px 8px", borderRadius: 4 }}>{store.エリア}</span>
             <span style={{ fontSize: 11, background: "#1a1a1a", color: "#888", padding: "2px 8px", borderRadius: 4 }}>{store.ジャンル}</span>
+            {price && <span style={{ fontSize: 11, background: "#1a1a1a", color: "#aaa", padding: "2px 8px", borderRadius: 4 }}>{price}</span>}
             <span style={{ fontSize: 11, color: contam.color, padding: "2px 8px", borderRadius: 4, border: `1px solid ${contam.color}33` }}>{contam.label}</span>
             {dist !== null && <span style={{ fontSize: 11, color: "#555", padding: "2px 8px", borderRadius: 4, background: "#1a1a1a" }}>📍 {formatDist(dist)}</span>}
           </div>
@@ -200,42 +182,49 @@ function StoreCard({ store, onClick, userLocation, rank }) {
         <div style={{ fontSize: 12, color: "#666" }}>Google <span style={{ color: "#ccc", fontWeight: 600 }}>{store.Google評価?.toFixed(1) ?? "−"}</span></div>
         <div style={{ fontSize: 12, color: "#444" }}>({store.Google件数?.toLocaleString() ?? "−"} reviews)</div>
       </div>
-      {store.reviewSummary && (
+      {(store.reviewSummaryEn || store.reviewSummary) && (
         <div style={{ marginTop: 10, fontSize: 12, color: "#555", lineHeight: 1.5, borderTop: "1px solid #1a1a1a", paddingTop: 10 }}>
-          {store.reviewSummary.slice(0, 100)}…
+          {(store.reviewSummaryEn || store.reviewSummary).slice(0, 100)}…
         </div>
       )}
     </div>
   );
 }
 
-function NearbySection({ stores, userLocation, onSelect, genre, setGenre }) {
+function NearbySection({ stores, userLocation, onSelect, genre, setGenre, nearestArea }) {
   const nearby = useMemo(() => {
     if (!userLocation) return [];
     let d = stores.filter(r => r.ガチ指数 && r.lat && r.lng);
     if (genre !== "すべて") d = d.filter(r => r.ジャンル === genre);
-    return d.map(r => ({ ...r, _dist: getDistance(userLocation.lat, userLocation.lng, r.lat, r.lng) }))
-      .filter(r => r._dist < 2000).sort((a, b) => b.ガチ指数 - a.ガチ指数).slice(0, 3);
+    const within2km = d.map(r => ({ ...r, _dist: getDistance(userLocation.lat, userLocation.lng, r.lat, r.lng) })).filter(r => r._dist < 2000).sort((a, b) => b.ガチ指数 - a.ガチ指数).slice(0, 3);
+    if (within2km.length > 0) return within2km;
+    // fallback: nearest area top 3
+    return stores.filter(r => r.ガチ指数 && r.エリア === nearestArea && (genre === "すべて" || r.ジャンル === genre)).sort((a, b) => b.ガチ指数 - a.ガチ指数).slice(0, 3);
+  }, [stores, userLocation, genre, nearestArea]);
+
+  const isNearby = useMemo(() => {
+    if (!userLocation) return false;
+    let d = stores.filter(r => r.ガチ指数 && r.lat && r.lng);
+    if (genre !== "すべて") d = d.filter(r => r.ジャンル === genre);
+    return d.some(r => getDistance(userLocation.lat, userLocation.lng, r.lat, r.lng) < 2000);
   }, [stores, userLocation, genre]);
 
   return (
     <div style={{ marginBottom: 24 }}>
       <div style={{ marginBottom: 12 }}>
         <div style={{ fontSize: 13, fontWeight: 700, color: "#00C896", letterSpacing: 1, textTransform: "uppercase" }}>📍 Near You</div>
-        <div style={{ fontSize: 11, color: "#444", marginTop: 2 }}>Top gachi spots within 2km</div>
+        <div style={{ fontSize: 11, color: "#444", marginTop: 2 }}>
+          {isNearby ? "Top gachi spots within 2km" : `No spots within 2km — showing best in ${nearestArea}`}
+        </div>
       </div>
       <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 12 }}>
         {GENRES.map(g => (
           <button key={g} onClick={() => setGenre(g)} style={{ padding: "5px 12px", borderRadius: 20, fontSize: 11, fontWeight: 600, cursor: "pointer", background: genre === g ? "#00C896" : "#111", color: genre === g ? "#000" : "#666", border: genre === g ? "1px solid #00C896" : "1px solid #222" }}>{g}</button>
         ))}
       </div>
-      {nearby.length === 0 ? (
-        <div style={{ fontSize: 13, color: "#444", padding: "20px 0", textAlign: "center" }}>No gachi spots found nearby.<br /><span style={{ fontSize: 11 }}>Try a different genre or browse all below.</span></div>
-      ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          {nearby.map((store, i) => <StoreCard key={i} store={store} onClick={onSelect} userLocation={userLocation} rank={i + 1} />)}
-        </div>
-      )}
+      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        {nearby.map((store, i) => <StoreCard key={i} store={store} onClick={onSelect} userLocation={userLocation} rank={i + 1} />)}
+      </div>
     </div>
   );
 }
@@ -245,6 +234,7 @@ function DetailModal({ store, onClose, userLocation }) {
   const gachi = getGachiLabel(store.ガチ指数);
   const contam = getContamLabel(store.汚染判定);
   const dist = userLocation && store.lat && store.lng ? getDistance(userLocation.lat, userLocation.lng, store.lat, store.lng) : null;
+  const price = getPriceLabel(store.priceLevel);
 
   useEffect(() => {
     document.body.style.overflow = "hidden";
@@ -258,6 +248,8 @@ function DetailModal({ store, onClose, userLocation }) {
       : "★★☆☆☆ by locals"
     : null;
 
+  const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(store.店名 + " " + store.エリア + " 東京")}`;
+
   return (
     <>
       <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", zIndex: 1000, display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
@@ -269,6 +261,7 @@ function DetailModal({ store, onClose, userLocation }) {
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                 <span style={{ fontSize: 12, background: "#1a1a1a", color: "#888", padding: "3px 10px", borderRadius: 6 }}>{store.エリア}</span>
                 <span style={{ fontSize: 12, background: "#1a1a1a", color: "#888", padding: "3px 10px", borderRadius: 6 }}>{store.ジャンル}</span>
+                {price && <span style={{ fontSize: 12, background: "#1a1a1a", color: "#aaa", padding: "3px 10px", borderRadius: 6 }}>{price}</span>}
                 <span style={{ fontSize: 12, color: contam.color, padding: "3px 10px", borderRadius: 6, border: `1px solid ${contam.color}44` }}>{contam.label}</span>
                 {dist !== null && <span style={{ fontSize: 12, color: "#555", padding: "3px 10px", borderRadius: 6, background: "#1a1a1a" }}>📍 {formatDist(dist)}</span>}
               </div>
@@ -294,18 +287,23 @@ function DetailModal({ store, onClose, userLocation }) {
             </div>
           </div>
 
-          {store.reviewSummary && (
+          {(store.reviewSummaryEn || store.reviewSummary) && (
             <div style={{ background: "#111", borderRadius: 12, padding: "16px 18px", marginBottom: 16 }}>
               <div style={{ fontSize: 11, color: "#555", letterSpacing: 1, textTransform: "uppercase", marginBottom: 10 }}>Why trusted by locals</div>
-              <p style={{ fontSize: 13, color: "#bbb", lineHeight: 1.7, margin: 0 }}>{store.reviewSummary}</p>
+              <p style={{ fontSize: 13, color: "#bbb", lineHeight: 1.7, margin: 0 }}>{store.reviewSummaryEn || store.reviewSummary}</p>
             </div>
           )}
 
           <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 20 }}>
-            <a href={store.食べログURL} target="_blank" rel="noopener noreferrer" style={{ display: "block", textAlign: "center", background: "#00C896", color: "#000", fontWeight: 700, fontSize: 14, padding: "14px", borderRadius: 10, textDecoration: "none", letterSpacing: 0.5 }}>
-              View on Tabelog →
-            </a>
-            <button onClick={() => setShowPostMeal(true)} style={{ background: "#111", border: "1px solid #333", color: "#aaa", fontSize: 14, fontWeight: 600, padding: "14px", borderRadius: 10, cursor: "pointer", letterSpacing: 0.5 }}>
+            <div style={{ display: "flex", gap: 10 }}>
+              <a href={store.食べログURL} target="_blank" rel="noopener noreferrer" style={{ flex: 1, display: "block", textAlign: "center", background: "#00C896", color: "#000", fontWeight: 700, fontSize: 13, padding: "14px", borderRadius: 10, textDecoration: "none" }}>
+                Tabelog →
+              </a>
+              <a href={mapsUrl} target="_blank" rel="noopener noreferrer" style={{ flex: 1, display: "block", textAlign: "center", background: "#1a1a1a", color: "#fff", fontWeight: 700, fontSize: 13, padding: "14px", borderRadius: 10, textDecoration: "none", border: "1px solid #333" }}>
+                Google Maps →
+              </a>
+            </div>
+            <button onClick={() => setShowPostMeal(true)} style={{ background: "#111", border: "1px solid #333", color: "#aaa", fontSize: 14, fontWeight: 600, padding: "14px", borderRadius: 10, cursor: "pointer" }}>
               🍜 I ate here — share my dish
             </button>
             <button onClick={onClose} style={{ background: "transparent", border: "none", color: "#444", fontSize: 13, padding: "8px", cursor: "pointer" }}>Close</button>
@@ -327,6 +325,7 @@ export default function App() {
   const [selected, setSelected] = useState(null);
   const [sortBy, setSortBy] = useState("gachi");
   const [userLocation, setUserLocation] = useState(null);
+  const [nearestArea, setNearestArea] = useState(null);
   const [gpsStatus, setGpsStatus] = useState("idle");
 
   useEffect(() => {
@@ -340,7 +339,9 @@ export default function App() {
         pos => {
           const { latitude, longitude } = pos.coords;
           setUserLocation({ lat: latitude, lng: longitude });
-          setArea(getNearestArea(latitude, longitude));
+          const nearest = getNearestArea(latitude, longitude);
+          setNearestArea(nearest);
+          setArea(nearest);
           setGpsStatus("success");
         },
         () => setGpsStatus("error"),
@@ -353,7 +354,7 @@ export default function App() {
     let d = data.filter(r => r.ガチ指数);
     if (area !== "すべて") d = d.filter(r => r.エリア === area);
     if (genre !== "すべて") d = d.filter(r => r.ジャンル === genre);
-    if (search) d = d.filter(r => r.店名.includes(search) || (r.reviewSummary || "").toLowerCase().includes(search.toLowerCase()));
+    if (search) d = d.filter(r => r.店名.includes(search) || (r.reviewSummaryEn || r.reviewSummary || "").toLowerCase().includes(search.toLowerCase()));
     if (sortBy === "gachi") d = [...d].sort((a, b) => b.ガチ指数 - a.ガチ指数);
     else if (sortBy === "tabelog") d = [...d].sort((a, b) => (b.食べログスコア ?? 0) - (a.食べログスコア ?? 0));
     else if (sortBy === "google") d = [...d].sort((a, b) => (b.Google評価 ?? 0) - (a.Google評価 ?? 0));
@@ -381,7 +382,7 @@ export default function App() {
 
         <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search by name or cuisine..." style={{ width: "100%", padding: "12px 16px", borderRadius: 10, fontSize: 14, background: "#111", border: "1px solid #222", color: "#fff", outline: "none", boxSizing: "border-box", marginBottom: 14 }} />
 
-        {userLocation && !search && <NearbySection stores={data} userLocation={userLocation} onSelect={setSelected} genre={nearbyGenre} setGenre={setNearbyGenre} />}
+        {userLocation && !search && <NearbySection stores={data} userLocation={userLocation} onSelect={setSelected} genre={nearbyGenre} setGenre={setNearbyGenre} nearestArea={nearestArea} />}
 
         <div style={{ fontSize: 11, color: "#444", letterSpacing: 1, textTransform: "uppercase", marginBottom: 8 }}>Browse All</div>
         <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 8 }}>{AREAS.map(a => filterBtn(a, area, setArea))}</div>
